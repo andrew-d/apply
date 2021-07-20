@@ -39,7 +39,7 @@ expansion for arguments.
 
 Sometimes, you may want to provide some configuration for units - e.g. a
 hostname, or something similar. If a facts file exists under `facts/TARGETNAME`
-- e.g. `facts/foo.example.com` - then it will be uploaded and sourced in every
+\- e.g. `facts/foo.example.com` - then it will be uploaded and sourced in every
 unit's subshell after `lib`. This allows everything from basic variable
 exporting to dynamically gathering information about the system's attached
 hardware.
