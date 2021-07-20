@@ -140,3 +140,46 @@ sponge() {
     fi &&
     rm -f "$tmpfile"
 }
+
+# mem_total returns the total bytes of available installed memory on this
+# system.
+mem_total() {
+    local memtotal_kb
+    memtotal_kb="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"
+
+    printf "%d\n" "$(( memtotal_kb * 1024 ))"
+}
+
+# num_cpus is a portable version of nproc; it returns the number of processors
+# on the system.
+num_cpus() {
+    if command -v nproc >/dev/null 2>&1 ; then
+        nproc --all
+        return
+    fi
+
+    # On macOS or *BSD, use sysctl to get the number of CPUs.
+    local os
+    os="$(uname -s)"
+    if [ "$os" = "Darwin" ] || [ "$(echo "$os" | grep -q BSD)" = "BSD" ]; then
+        sysctl -n hw.ncpu
+        return
+    fi
+
+    # If we have getconf, use that since it allows us to return the number of
+    # online processors (instead of just available ones).
+    if command -v getconf >/dev/null 2>&1 ; then
+        getconf _NPROCESSORS_ONLN
+        return
+    fi
+
+    # Any Linux system should have this; it's not perfectly accurate (e.g. with
+    # hyperthreading), but it's close enough.
+    if [ -f /proc/cpuinfo ]; then
+        grep -c '^processor' /proc/cpuinfo 2>/dev/null
+        return
+    fi
+
+    # Failure!
+    return 1
+}

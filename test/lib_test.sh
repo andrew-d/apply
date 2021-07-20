@@ -144,5 +144,44 @@ testSponge_Append() {
     assertEquals "$(printf 'two\none\n')" "$(cat "$TEST_TMPDIR/output.txt")"
 }
 
+testMemTotal() {
+    # TODO(andrew-d): better test
+
+    # Assert that it's numeric by deleting all numbers and verifying that
+    # there's nothing left.
+    assertEquals "" "$(mem_total | tr -d '[0-9]')"
+}
+
+testNumCpus() {
+    # We run the tests themselves on a platform with 'nproc', so we can use it
+    # as a comparison to make sure that things work.
+    local expected="$(nproc --all)"
+
+    # Regular
+    assertEquals "$expected" "$(num_cpus)"
+}
+
+testNumCpus_use_getconf() {
+    local expected="$(nproc --all)"
+
+    local util
+    for util in grep uname getconf; do
+        ln -s $(which "$util") "$TEST_TMPDIR/$util"
+    done
+
+    assertEquals "$expected" "$(PATH="$TEST_TMPDIR" num_cpus)"
+}
+
+testNumCpus_use_cpuinfo() {
+    local expected="$(nproc --all)"
+
+    local util
+    for util in grep uname; do
+        ln -s $(which "$util") "$TEST_TMPDIR/$util"
+    done
+
+    assertEquals "$expected" "$(PATH="$TEST_TMPDIR" num_cpus)"
+}
+
 # Load shUnit2
 . ./shunit2
