@@ -132,5 +132,49 @@ EOF
     assertEquals "$stderr_expected" "$stderr_actual"
 }
 
+testFacts() {
+    # Create a facts script
+    cat <<EOF > "$TEST_TMPDIR/facts"
+FACT1=one
+FACT2=two
+EOF
+    chmod +x "$TEST_TMPDIR/facts"
+
+    # Create a unit file that just prints the facts then fails so we can
+    # assert on the result.
+cat <<EOF > "$TEST_TMPDIR/units/facts"
+echo "Fact 1: \${FACT1}"
+echo "Fact 2: \${FACT2}"
+exit 1
+EOF
+
+    # Actually run; this fails
+    (
+        cd "$TEST_TMPDIR"
+        ./run units/facts
+    ) >"$TEST_TMPDIR/stdout" 2>"$TEST_TMPDIR/stderr"
+
+    local stdout_expected
+    { stdout_expected="$(cat)"; } <<EOF
+^[[33m** ^[[34munits/facts^[(B^[[m ^[[31mFAILED^[(B^[[m
+EOF
+
+    # Use 'cat -v' to display control characters so we can assert on them
+    assertEquals "$stdout_expected" "$(cat -v "$TEST_TMPDIR/stdout")"
+
+    local stderr_expected
+    { stderr_expected="$(cat)"; } <<EOF
+Here are the last lines of output:
+Fact 1: one
+Fact 2: two
+For details, see TMPDIR/units_facts.log
+EOF
+
+    local stderr_actual
+    stderr_actual="$(cat -v "$TEST_TMPDIR/stderr")"
+    stderr_actual="$(printf "%s\n" "$stderr_actual" | sed "s|$TMPDIR/.*/units_facts.log|TMPDIR/units_facts.log|g")"
+    assertEquals "$stderr_expected" "$stderr_actual"
+}
+
 # Load shUnit2
 . ./shunit2
